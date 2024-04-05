@@ -28,4 +28,3 @@ smart-open==6.4.0
 tqdm==4.66.1
 tweepy==4.14.0
 urllib3==1.25.11
-Werkzeug==3.0.1
