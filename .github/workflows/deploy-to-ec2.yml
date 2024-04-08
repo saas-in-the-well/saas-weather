@@ -1,0 +1,34 @@
+name: Deploy to EC2
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH connection
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.FAST_API_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.FAST_API_SECRET_NAME }}@${{ secrets.FAST_API_SECRET_HOST }} << 'EOF'
+            cd /home/ec2-user       # EC2 인스턴스 내 프로젝트 경로로 이동
+            git pull origin main    # 최신 코드 가져오기
+          
+            cd /home/ec2-user/fast-api/
+            python -m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            
+            nohup python3 -m uvicorn main:app > /home/ec2-user/fast-api/log/fastapi.log 2>&1 &
+          EOF
