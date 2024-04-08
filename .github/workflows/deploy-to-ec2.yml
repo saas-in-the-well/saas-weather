@@ -65,15 +65,23 @@ jobs:
  
           EOF
 
-      - name: Action Slack
-        uses: 8398a7/action-slack@v3
+  action-slack:
+    runs-on: code-linux
+    needs: deploy-ec2
+    steps:
+      - uses: 8398a7/action-slack@v3
         with:
-          status: ${{ job.status }}
-          color: ${{ job.status == 'success' && 'good' || 'danger' }}
-          author_name: Fast API - master
-          fields: repo,commit,message,author
+          status: custom
+          fields: workflow,job,commit,repo,ref,author
           mention: here
           if_mention: failure,cancelled
+          custom_payload: |
+            {
+              attachments: [{
+                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
+                text: `${process.env.AS_WORKFLOW}(${process.env.AS_COMMIT})\n${process.env.AS_REPO}@${process.env.AS_REF} by ${process.env.AS_AUTHOR} ${{ job.status }}`,
+              }]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
+        if: always() # Pick up events even if the job fails or is canceled.
