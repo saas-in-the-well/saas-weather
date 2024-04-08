@@ -64,3 +64,16 @@ jobs:
             nohup python3 -m uvicorn main:app > /home/ec2-user/fast-api/log/fastapi.log 2>&1 &
  
           EOF
+
+      - name: Action Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          color: ${{ job.status == 'success' && 'good' || 'danger' }}
+          author_name: Fast API - master
+          fields: repo,commit,message,author
+          mention: here
+          if_mention: failure,cancelled
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
