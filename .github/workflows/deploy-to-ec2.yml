@@ -30,5 +30,17 @@ jobs:
             python -m pip install --upgrade pip
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
             
+            # uvicorn으로 실행된 애플리케이션의 프로세스 ID 찾기
+            PID=$(pgrep -f "uvicorn main:app")
+            
+            # 프로세스 ID가 존재하면 해당 프로세스 종료
+            if [ ! -z "$PID" ]; then
+              kill $PID
+              sleep 5 # 프로세스 종료를 위해 충분한 시간 기다림
+            fi
+            
+            # uvicorn 서버 재시작
+            cd /home/ec2-user/fast-api/
             nohup python3 -m uvicorn main:app > /home/ec2-user/fast-api/log/fastapi.log 2>&1 &
+ 
           EOF
