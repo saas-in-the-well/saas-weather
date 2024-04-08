@@ -66,8 +66,8 @@ jobs:
           EOF
 
   action-slack:
+    needs: deploy
     runs-on: code-linux
-    needs: deploy-ec2
     steps:
       - uses: 8398a7/action-slack@v3
         with:
