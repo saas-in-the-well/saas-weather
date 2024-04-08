@@ -27,8 +27,8 @@ jobs:
             git pull origin main    # 최신 코드 가져오기
           
             cd /home/ec2-user/fast-api/
-            python -m pip install --upgrade pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            python 3-m pip3 install --upgrade pip3
+            if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
             
             # uvicorn으로 실행된 애플리케이션의 프로세스 ID 찾기
             PID=$(pgrep -f "uvicorn main:app")
