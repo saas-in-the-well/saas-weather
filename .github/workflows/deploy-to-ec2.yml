@@ -67,7 +67,7 @@ jobs:
 
   action-slack:
     needs: deploy
-    runs-on: code-linux
+    runs-on: ubuntu-latest
     steps:
       - uses: 8398a7/action-slack@v3
         with:
