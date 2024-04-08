@@ -23,19 +23,21 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.FAST_API_SECRET_NAME }}@${{ secrets.FAST_API_SECRET_HOST }} << 'EOF'
-            cd /home/ec2-user       # EC2 인스턴스 내 프로젝트 경로로 이동
-            git pull origin main    # 최신 코드 가져오기
+            cd /home/ec2-user 
+            git init
+            git remote add origin https://github.com/Yosigoon/fast-api.git
+            git pull origin master    # 최신 코드 가져오기
           
             cd /home/ec2-user/fast-api/
-            python 3-m pip3 install --upgrade pip3
-            if [ -f requirements.txt ]; then pip3 install -r requirements.txt; fi
+            python 3-m pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
             
             # uvicorn으로 실행된 애플리케이션의 프로세스 ID 찾기
             PID=$(pgrep -f "uvicorn main:app")
             
             # 프로세스 ID가 존재하면 해당 프로세스 종료
             if [ ! -z "$PID" ]; then
-              kill $PID
+              sudo kill $PID
               sleep 5 # 프로세스 종료를 위해 충분한 시간 기다림
             fi
             
