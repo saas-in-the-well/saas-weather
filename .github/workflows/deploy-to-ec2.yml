@@ -23,13 +23,12 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.FAST_API_SECRET_NAME }}@${{ secrets.FAST_API_SECRET_HOST }} << 'EOF'
-            cd /home/ec2-user 
-            git init
-            git remote add origin https://github.com/Yosigoon/fast-api.git
+            cd /home/ec2-user/fast-api
+            # git init
+            # git remote add origin https://github.com/Yosigoon/fast-api.git
             git pull origin master    # 최신 코드 가져오기
           
-            cd /home/ec2-user/fast-api/
-            python 3-m pip install --upgrade pip
+            python3 -m pip install --upgrade pip
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
             
             # uvicorn으로 실행된 애플리케이션의 프로세스 ID 찾기
@@ -42,7 +41,6 @@ jobs:
             fi
             
             # uvicorn 서버 재시작
-            cd /home/ec2-user/fast-api/
             nohup python3 -m uvicorn main:app > /home/ec2-user/fast-api/log/fastapi.log 2>&1 &
  
           EOF
