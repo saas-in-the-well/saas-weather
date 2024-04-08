@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Fast API Sample & EC2 Test!!!"}
+    return {"message": "EC2 Fast API Test"}
 
 
 @app.get("/weather")
