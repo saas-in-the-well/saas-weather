@@ -1,4 +1,4 @@
-name: Python package
+name: Hyeongwon Python package
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Build and publish Python package
         run: |
-          python setup.py sdist bdist_wheel
+          python main.py sdist bdist_wheel
           python -m pip install twine
           python -m twine upload dist/*
 
