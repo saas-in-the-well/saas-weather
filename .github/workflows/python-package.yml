@@ -34,9 +34,7 @@ jobs:
 
       - name: Build and publish Python package
         run: |
-          python main.py sdist bdist_wheel
-          python -m pip install twine
-          python -m twine upload dist/*
+          python setup.py sdist bdist_wheel
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
