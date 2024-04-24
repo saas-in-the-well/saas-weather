@@ -83,19 +83,19 @@ jobs:
         with:
           token: ${{ secrets.HYEONGWON_GITHUB_TOKEN }}
           repository: 'saas-in-the-well/saas-kubernetes'
-          ref: 'main'
+          ref: 'dev_hyeongwon'
 
       # 최신 코드 pull 받기
       - name: Pull Latest Code
         run: |
-          git pull origin main
+          git pull origin dev_hyeongwon
 
       # 쿠버네티스 배포이미지 업데이트
       - name: Update Kubernetes Deployment Image
         run: |
-          sed -i 's|yosigoon/saas-weather:.*|yosigoon/saas-bff:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}|' ./kube/hyeongwon/deployment.yaml
-          git config --global user.name "yosigoon"
+          sed -i 's|yosigoon/saas-weather:.*|yosigoon/saas-bff:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}|' ./kube/saas-weather-deployment.yaml
+          git config --global user.name "HW_GithubAction"
           git config --global user.email "yosigoon@gmail.com"
-          git add ./kube/hyeongwon/deployment.yaml
+          git add ./kube/saas-weather-deployment.yaml
           git commit -m "Update image tag to ${{ github.sha }}"
-          git push origin main
+          git push origin dev_hyeongwon
