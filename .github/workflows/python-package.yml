@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
 
@@ -34,7 +34,8 @@ jobs:
 
       - name: Build and publish Python package
         run: |
-          python setup.py sdist bdist_wheel
+          python -m pip install --upgrade build twine
+          python -m build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
