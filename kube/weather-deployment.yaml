@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: weather-container
-          image: byeonggy/fastapi-server:1714023427
+          image: byeonggy/fastapi-server:1714026669
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7070 # 어플리케이션이 노출하는 포트로 변경해야 합니다.
