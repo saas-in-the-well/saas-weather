@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather
+  template:
+    metadata:
+      labels:
+        app: weather
+    spec:
+      containers:
+        - name: weather-container
+          image: byeonggy/fastapi-server:1714023427
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7070 # 어플리케이션이 노출하는 포트로 변경해야 합니다.
