@@ -10,7 +10,7 @@ COPY . /app
 # 필요한 종속성을 설치합니다.
 RUN apt-get update && \
     apt-get install -y build-essential && \
-    pip install -r requirements.txt \
+    pip install -r requirements.txt
 
 # 애플리케이션을 실행합니다.
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
