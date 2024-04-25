@@ -34,7 +34,7 @@ jobs:
 
       - name: Test with pytest
         run: |
-          python app/main.py
+          python main.py
 
       - name: Build and publish Python package
         run: |
