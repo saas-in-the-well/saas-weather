@@ -27,4 +27,4 @@ smart-open==6.4.0
 tqdm==4.66.1
 urllib3==1.25.11
 fastapi==0.68.0
-uvicorn==0.10.0
+uvicorn==0.15.0
