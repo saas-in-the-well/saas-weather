@@ -10,7 +10,7 @@ env:
   APP_NAME: saas-weather
 
 jobs:
-  build:
+  build-and-image-create:
     runs-on: ubuntu-latest
 
     steps:
@@ -65,13 +65,13 @@ jobs:
 
       - name: push Kubernetes Manifest
         run: |
-
+  
           git fetch
           git checkout dev_jaeho
           git pull --rebase origin dev_jaeho
-
+  
           sed -i 's|^.*image:.*|          image: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-dev_jaeho-${{ github.sha }}|' kube/jaeho/${{ env.APP_NAME }}.yaml
-
+  
           git config user.email ${{ secrets.JAEHO_GITHUB_EMAIL }}
           git config user.name "GitHub Actions"
           git add kube/jaeho/${{ env.APP_NAME }}.yaml
