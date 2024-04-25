@@ -1,4 +1,4 @@
-name: Hyeongwon Python package
+name: dev Hyeongwon Python package
 
 on:
   push:
