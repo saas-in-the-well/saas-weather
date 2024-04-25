@@ -8,7 +8,10 @@ WORKDIR /app
 COPY . /app
 
 # 필요한 종속성을 설치합니다.
-RUN pip install -r requirements.txt
+RUN apt-get update && \
+    apt-get install -y build-essential && \
+    pip install -r requirements.txt \
+RUN pip install uvicorn
 
 # 애플리케이션을 실행합니다.
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
