@@ -75,13 +75,6 @@ jobs:
           tags: yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
 
-      # 이미지를 Docker 재태그 및 Hub에 푸시
-      - name: Push Docker image to DockerHub
-        run: |
-          docker tag saas-weather-application:release-dev_hyeongwon-${{ github.sha }} yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
-          docker push yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
-
-
   update-deployment:
     needs: push-docker-image
     runs-on: ubuntu-latest
