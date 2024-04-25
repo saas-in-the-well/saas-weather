@@ -78,8 +78,8 @@ jobs:
       # 이미지를 Docker 재태그 및 Hub에 푸시
       - name: Push Docker image to DockerHub
         run: |
-          docker tag saas-weather-application:release-dev_hyeongwon-${{ github.sha }} yosigoon/saas-weather:saas-bff-application-release-dev_hyeongwon-${{ github.sha }}
-          docker push yosigoon/saas-weather:saas-bff-application-release-dev_hyeongwon-${{ github.sha }}
+          docker tag saas-weather-application:release-dev_hyeongwon-${{ github.sha }} yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
+          docker push yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
 
 
   update-deployment:
@@ -102,7 +102,7 @@ jobs:
       # 쿠버네티스 배포이미지 업데이트
       - name: Update Kubernetes Deployment Image
         run: |
-          sed -i 's|yosigoon/saas-weather:.*|yosigoon/saas-bff:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}|' ./kube/saas-weather-deployment.yaml
+          sed -i 's|yosigoon/saas-weather:.*|yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}|' ./kube/saas-weather-deployment.yaml
           git config --global user.name "HW_GithubAction"
           git config --global user.email "yosigoon@gmail.com"
           git add ./kube/saas-weather-deployment.yaml
