@@ -55,18 +55,25 @@ jobs:
           name: saas-weather-application
           path: dist
 
-      # Docker 이미지 빌드
-      - name: Build Docker image
-        with:
-          platforms: linux/amd64,linux/arm64
-        run: docker build . -t saas-weather-application:release-dev_hyeongwon-${{ github.sha }}
-
       # Docker Hub에 로그인
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.HYEONGWON_DOCKER_USERNAME }}
           password: ${{ secrets.HYEONGWON_DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+        # Docker 이미지 빌드
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
 
       # 이미지를 Docker 재태그 및 Hub에 푸시
       - name: Push Docker image to DockerHub
