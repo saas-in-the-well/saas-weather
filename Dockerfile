@@ -1,15 +1,10 @@
-FROM python:3.9
+FROM python:3.7
 
-WORKDIR /weather_test
+WORKDIR /app
+COPY . .
 
-COPY ./requirements.txt /weather_test/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /weather_test/requirements.txt
+EXPOSE 7000
 
-COPY ./app /weather_test/app
-
-WORKDIR /weather_test/app
-
-EXPOSE 7070
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7070"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
