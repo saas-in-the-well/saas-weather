@@ -1,0 +1,79 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ "dev_jaeho" ]
+  pull_request:
+    branches: [ "dev_jaeho" ]
+
+env:
+  APP_NAME: saas-weather
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.7'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Test with pytest
+        run: |
+          python main.py
+
+      - name: Extract branch name
+        id: vars
+        shell: bash
+        run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
+
+      - name: Build Docker image
+        run: |
+          docker build . -t ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ steps.vars.outputs.branch }}-${{ github.sha }} --build-arg VERSION=${{ github.sha }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.JAEHO_DOCKER_ID }}
+          password: ${{ secrets.JAEHO_DOCKER_PASSWORD }}
+
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ steps.vars.outputs.branch }}-${{ github.sha }}
+
+  git-remote-push:
+    needs: build-and-image-create
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout saas-kubernetes
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.JAEHO_GITHUB_TOKEN }}
+          repository: 'saas-in-the-well/saas-kubernetes'
+
+      - name: push Kubernetes Manifest
+        run: |
+
+          git fetch
+          git checkout dev_jaeho
+          git pull --rebase origin dev_jaeho
+
+          sed -i 's|^.*image:.*|          image: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-dev_jaeho-${{ github.sha }}|' kube/jaeho/${{ env.APP_NAME }}.yaml
+
+          git config user.email ${{ secrets.JAEHO_GITHUB_EMAIL }}
+          git config user.name "GitHub Actions"
+          git add kube/jaeho/${{ env.APP_NAME }}.yaml
+          git commit -m "Update image tag in Kubernetes manifest"
+          git push origin dev_jaeho
