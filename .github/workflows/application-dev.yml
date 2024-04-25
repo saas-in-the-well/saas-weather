@@ -1,10 +1,14 @@
-name: dev Hyeongwon Python package
+name: develop saas-weather Python package
 
 on:
   push:
     branches: [ "develop" ]
   pull_request:
     branches: [ "develop" ]
+
+env:
+  APP_NAME: saas-weather
+  BRANCH_NAME: develop
 
 jobs:
   build:
@@ -27,17 +31,20 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
       - name: Test with pytest
         run: |
           python app/main.py
+
       - name: Build and publish Python package
         run: |
           python -m pip install --upgrade build twine
           python -m build
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: saas-weather-application
+          name: ${{ env.APP_NAME }}-application
           path: dist/
 
   push-docker-image:
@@ -49,15 +56,15 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: saas-weather-application
+          name: ${{ env.APP_NAME }}-application
           path: dist
 
       # Docker Hub에 로그인
       - name: Log in to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.HYEONGWON_DOCKER_USERNAME }}
-          password: ${{ secrets.HYEONGWON_DOCKER_PASSWORD }}
+          username: ${{ secrets.JAEHO_DOCKER_ID }}
+          password: ${{ secrets.JAEHO_DOCKER_PASSWORD }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -69,8 +76,13 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}
+          tags: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
+
+      # 이미지를 Docker 재태그 및 Hub에 푸시
+      - name: Push Docker image to DockerHub
+        run: |
+          docker push ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}
 
   update-deployment:
     needs: push-docker-image
@@ -82,18 +94,21 @@ jobs:
         with:
           token: ${{ secrets.HYEONGWON_GITHUB_TOKEN }}
           repository: 'saas-in-the-well/saas-kubernetes'
-          ref: 'develop'
+          ref: ${{ env.BRANCH_NAME }}
 
       # 최신 코드 pull 받기
       - name: Pull Latest Code
         run: |
-          git pull origin dev_hyeongwon
+          git pull origin develop
+
       # 쿠버네티스 배포이미지 업데이트
       - name: Update Kubernetes Deployment Image
         run: |
-          sed -i 's|yosigoon/saas-weather:.*|yosigoon/saas-weather:saas-weather-application-release-dev_hyeongwon-${{ github.sha }}|' ./kube/saas-weather-deployment.yaml
-          git config --global user.name "HW_GithubAction"
-          git config --global user.email "yosigoon@gmail.com"
-          git add ./kube/saas-weather-deployment.yaml
+          sed -i 's|^.*image:.*|          image: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}|' kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          
+          git config --global user.name "GitHub Actions"
+          git config --global user.email ${{ secrets.JAEHO_GITHUB_EMAIL }}
+          git add ./kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
           git commit -m "Update image tag to ${{ github.sha }}"
           git push origin develop
+          git push origin ${{ env.BRANCH_NAME }}
