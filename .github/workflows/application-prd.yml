@@ -2,7 +2,7 @@ name: GitHub Actions
 run-name: Main GitHub Actions
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "product" ]
 
 jobs:
   build:
