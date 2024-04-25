@@ -47,7 +47,7 @@ jobs:
       - name: Update kubernetes manifest
         run: |
           git fetch
-          git chekout dev_byeonggyu
+          git checkout dev_byeonggyu
           git pull --rebase origin dev_byeonggyu
           sed -i 's/image:.*/image: ${{secrets.BYEONGGYU_DOCKER_NAME}}\/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}/g' kube/weather-deployment.yaml
           git config --global user.name "GitHub Actions"
