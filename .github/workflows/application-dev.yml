@@ -79,11 +79,6 @@ jobs:
           tags: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}
           platforms: linux/amd64,linux/arm64
 
-      # 이미지를 Docker 재태그 및 Hub에 푸시
-      - name: Push Docker image to DockerHub
-        run: |
-          docker push ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}
-
   update-deployment:
     needs: push-docker-image
     runs-on: ubuntu-latest
