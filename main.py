@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
+from prometheus_fastapi_instrumentator import Instrumentator
 import requests
 
 app = FastAPI()
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/")
 async def root():

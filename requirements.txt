@@ -28,4 +28,4 @@ tqdm==4.66.1
 urllib3==1.25.11
 fastapi==0.68.0
 uvicorn==0.17.6
-
+prometheus-fastapi-instrumentator==5.7.1
