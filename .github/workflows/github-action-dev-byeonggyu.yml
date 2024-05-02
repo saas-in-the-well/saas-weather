@@ -71,7 +71,7 @@ jobs:
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.BYEONGGYU_GITHUB_TOKEN }}
+          token: ${{ secrets.SAAS_GITHUB_TOKEN }}
           repository: 'saas-in-the-well/saas-kubernetes'
         
       
@@ -94,7 +94,7 @@ jobs:
           git pull --rebase origin dev_byeonggyu
           sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/$ECR_REPOSITORY:$IMAGE_TAG/g' kube/byeonggyu/weather-deployment.yaml
           git config --global user.name "GitHub Actions"
-          git config --global user.email ${{secrets.BYEONGGYU_EMAIL}}
+          git config --global user.email "byeonggyu.jeon@bespinglobal.com"
           git add kube/byeonggyu/${{env.APP_NAME}}.yaml
           git commit -m 'update manifest'
           git push origin dev_byeonggyu
