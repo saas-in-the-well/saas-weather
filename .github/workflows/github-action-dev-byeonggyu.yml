@@ -4,8 +4,12 @@ on:
   push:
     branches: [ "dev_byeonggyu" ]
 
+permissions:
+      id-token: write
+
 env:
   APP_NAME: saas-weather
+  ECR_REPOSITORY: saas-weather
 
 jobs:
   build:
@@ -13,23 +17,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+#      - name: Set up Python 3.9
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: '3.9'
+
+#      - name: Extract branch name
+#        id: vars
+#        shell: bash
+#        run: echo "::set-output name=dt::$(echo `date +%s`)"
+         
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          python-version: '3.9'
+            #role-to-assume: arn:aws:iam::794187215716:role/saas-git-action
+            role-to-assume: arn:aws:iam::794187215716:role/saas_git_cation_test
+            role-session-name: ecrRoleSession
+            aws-region: ap-northeast-2
 
-      - name: Extract branch name
-        id: vars
-        shell: bash
-        run: echo "::set-output name=dt::$(echo `date +%s`)"
-
-      - name: Build and Push the Docker image
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build . -t ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
-          docker login -u${{secrets.BYEONGGYU_DOCKER_ID}} -p${{secrets.BYEONGGYU_DOCKER_PW}}
-          docker push ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+#      - name: Build and Push the Docker image
+#        run: |
+#          docker build . -t ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
+#          docker login -u${{secrets.BYEONGGYU_DOCKER_ID}} -p${{secrets.BYEONGGYU_DOCKER_PW}}
+#          docker push ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
+
 
 
   git-remote-push:
@@ -44,12 +75,24 @@ jobs:
           repository: 'saas-in-the-well/saas-kubernetes'
         
       
+#      - name: Update kubernetes manifest
+#        run: |
+#          git fetch
+#          git checkout dev_byeonggyu
+#          git pull --rebase origin dev_byeonggyu
+#          sed -i 's/image:.*/image: ${{secrets.BYEONGGYU_DOCKER_NAME}}\/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}/g' kube/byeonggyu/weather-deployment.yaml
+#          git config --global user.name "GitHub Actions"
+#          git config --global user.email ${{secrets.BYEONGGYU_EMAIL}}
+#          git add kube/byeonggyu/${{env.APP_NAME}}.yaml
+#          git commit -m 'update manifest'
+#          git push origin dev_byeonggyu
+
       - name: Update kubernetes manifest
         run: |
           git fetch
           git checkout dev_byeonggyu
           git pull --rebase origin dev_byeonggyu
-          sed -i 's/image:.*/image: ${{secrets.BYEONGGYU_DOCKER_NAME}}\/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}/g' kube/byeonggyu/${{env.APP_NAME}}.yaml
+          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/$ECR_REPOSITORY:$IMAGE_TAG/g' kube/byeonggyu/weather-deployment.yaml
           git config --global user.name "GitHub Actions"
           git config --global user.email ${{secrets.BYEONGGYU_EMAIL}}
           git add kube/byeonggyu/${{env.APP_NAME}}.yaml
