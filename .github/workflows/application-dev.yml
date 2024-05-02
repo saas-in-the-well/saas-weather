@@ -33,12 +33,17 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        run: |
-          docker build . -t ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }} --build-arg VERSION=${{ github.sha }}
-          docker push ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}
+          platforms: linux/amd64
 
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
@@ -46,6 +51,7 @@ jobs:
           token: ${{ secrets.SAAS_GITHUB_TOKEN }}
           repository: ${{vars.SAAS_KUBE_REPOSITORY}}
           ref: ${{ env.BRANCH_NAME }}
+
 
       - name: Update kubernetes manifest
         run: |
