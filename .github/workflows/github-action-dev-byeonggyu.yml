@@ -61,38 +61,18 @@ jobs:
 #          docker login -u${{secrets.BYEONGGYU_DOCKER_ID}} -p${{secrets.BYEONGGYU_DOCKER_PW}}
 #          docker push ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
 
-
-
-#  git-remote-push:
-#    needs: build
-#    runs-on: ubuntu-latest
-
-#    steps:
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.SAAS_GITHUB_TOKEN }}
           repository: 'saas-in-the-well/saas-kubernetes'
-        
-      
-#      - name: Update kubernetes manifest
-#        run: |
-#          git fetch
-#          git checkout dev_byeonggyu
-#          git pull --rebase origin dev_byeonggyu
-#          sed -i 's/image:.*/image: ${{secrets.BYEONGGYU_DOCKER_NAME}}\/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}/g' kube/byeonggyu/weather-deployment.yaml
-#          git config --global user.name "GitHub Actions"
-#          git config --global user.email ${{secrets.BYEONGGYU_EMAIL}}
-#          git add kube/byeonggyu/${{env.APP_NAME}}.yaml
-#          git commit -m 'update manifest'
-#          git push origin dev_byeonggyu
 
       - name: Update kubernetes manifest
         run: |
           git fetch
           git checkout dev_byeonggyu
           git pull --rebase origin dev_byeonggyu
-          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/$ECR_REPOSITORY:$IMAGE_TAG/g' ./kube/byeonggyu/${{env.APP_NAME}}.yaml
+          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/${{build-image.env.ECR_REGISTRY}}:${{build-image.env.IMAGE_TAG}}/g' ./kube/byeonggyu/${{env.APP_NAME}}.yaml
           git config --global user.name "GitHub Actions"
           git config --global user.email "byeonggyu.jeon@bespinglobal.com"
           git add ./kube/byeonggyu/${{env.APP_NAME}}.yaml
