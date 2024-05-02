@@ -1,79 +1,61 @@
-name: Deploy to EC2
+name: saas-weather application deploy
 
 on:
   push:
-    branches: [ "dev_jaeho" ]
+    branches: [ 'dev_jaeho' ]
   pull_request:
-    branches: [ "dev_jaeho" ]
+    branches: [ 'dev_jaeho' ]
+
+permissions:
+  id-token: write
 
 env:
   APP_NAME: saas-weather
+  BRANCH_NAME: develop
 
 jobs:
-  build-and-image-create:
+  build:
+
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
         with:
-          python-version: '3.7'
+          role-to-assume: ${{secrets.AWS_OIDC_ROLE}}
+          role-session-name: ecrRoleSession
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Install dependencies
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          docker build . -t ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }} --build-arg VERSION=${{ github.sha }}
+          docker push ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}
 
-      - name: Test with pytest
-        run: |
-          python main.py
 
-      - name: Extract branch name
-        id: vars
-        shell: bash
-        run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
-
-      - name: Build Docker image
-        run: |
-          docker build . -t ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ steps.vars.outputs.branch }}-${{ github.sha }} --build-arg VERSION=${{ github.sha }}
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.JAEHO_DOCKER_ID }}
-          password: ${{ secrets.JAEHO_DOCKER_PASSWORD }}
-
-      - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ steps.vars.outputs.branch }}-${{ github.sha }}
-
-  git-remote-push:
-    needs: build-and-image-create
-    runs-on: ubuntu-latest
-
-    steps:
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.JAEHO_GITHUB_TOKEN }}
-          repository: 'saas-in-the-well/saas-kubernetes'
+          token: ${{ secrets.SAAS_GITHUB_TOKEN }}
+          repository: ${{vars.SAAS_KUBE_REPOSITORY}}
+          ref: ${{ env.BRANCH_NAME }}
 
-      - name: push Kubernetes Manifest
+      - name: Update kubernetes manifest
         run: |
-  
           git fetch
-          git checkout dev_jaeho
-          git pull --rebase origin dev_jaeho
-  
-          sed -i 's|^.*image:.*|          image: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-dev_jaeho-${{ github.sha }}|' kube/jaeho/${{ env.APP_NAME }}.yaml
-  
-          git config user.email ${{ secrets.JAEHO_GITHUB_EMAIL }}
-          git config user.name "GitHub Actions"
-          git add kube/jaeho/${{ env.APP_NAME }}.yaml
-          git commit -m "Update image tag in Kubernetes manifest"
-          git push origin dev_jaeho
+          git checkout ${{ env.BRANCH_NAME }}
+          git pull --rebase origin ${{ env.BRANCH_NAME }}
+          
+          sed -i 's|${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:.*|${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}|' kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          git config user.email ${{ vars.SAAS_GITHUB_EMAIL }}
+          git config user.name ${{ vars.SAAS_GITHUB_NAME }}
+          git add kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          git commit -m "Update image tag to ${{ github.sha }}"
+          git push origin ${{ env.BRANCH_NAME }}
