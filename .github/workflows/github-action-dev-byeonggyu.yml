@@ -98,6 +98,3 @@ jobs:
           git add ./kube/byeonggyu/${{env.APP_NAME}}.yaml
           git commit -m 'update manifest'
           git push origin dev_byeonggyu
-
-          saas-weather.yaml
-          weather-deployment.yaml
