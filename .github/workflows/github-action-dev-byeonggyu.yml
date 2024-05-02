@@ -92,9 +92,12 @@ jobs:
           git fetch
           git checkout dev_byeonggyu
           git pull --rebase origin dev_byeonggyu
-          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/$ECR_REPOSITORY:$IMAGE_TAG/g' ./kube/byeonggyu/weather-deployment.yaml
+          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/$ECR_REPOSITORY:$IMAGE_TAG/g' ./kube/byeonggyu/${{env.APP_NAME}}.yaml
           git config --global user.name "GitHub Actions"
           git config --global user.email "byeonggyu.jeon@bespinglobal.com"
           git add ./kube/byeonggyu/${{env.APP_NAME}}.yaml
           git commit -m 'update manifest'
           git push origin dev_byeonggyu
+
+          saas-weather.yaml
+          weather-deployment.yaml
