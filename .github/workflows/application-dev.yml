@@ -1,10 +1,13 @@
-name: develop saas-weather Python package
+name: saas-weather application deploy
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ 'develop' ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ 'develop' ]
+
+permissions:
+  id-token: write
 
 env:
   APP_NAME: saas-weather
@@ -14,96 +17,45 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.7"]
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.7
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{secrets.AWS_OIDC_ROLE}}
+          role-session-name: ecrRoleSession
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install flake8 pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          docker build . -t ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }} --build-arg VERSION=${{ github.sha }}
+          docker push ${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}
 
-      - name: Test with pytest
-        run: |
-          python app/main.py
 
-      - name: Build and publish Python package
-        run: |
-          python -m pip install --upgrade build twine
-          python -m build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-application
-          path: dist/
-
-  push-docker-image:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-application
-          path: dist
-
-      # Docker Hub에 로그인
-      - name: Log in to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.JAEHO_DOCKER_ID }}
-          password: ${{ secrets.JAEHO_DOCKER_PASSWORD }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-        # Docker 이미지 빌드
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}
-          platforms: linux/amd64,linux/arm64
-
-  update-deployment:
-    needs: push-docker-image
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout saas-kubernetes repository
+      - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.HYEONGWON_GITHUB_TOKEN }}
-          repository: 'saas-in-the-well/saas-kubernetes'
+          token: ${{ secrets.SAAS_GITHUB_TOKEN }}
+          repository: ${{vars.SAAS_KUBE_REPOSITORY}}
           ref: ${{ env.BRANCH_NAME }}
 
-      # 최신 코드 pull 받기
-      - name: Pull Latest Code
+      - name: Update kubernetes manifest
         run: |
-          git pull origin develop
-
-      # 쿠버네티스 배포이미지 업데이트
-      - name: Update Kubernetes Deployment Image
-        run: |
-          sed -i 's|^.*image:.*|          image: ${{ secrets.JAEHO_DOCKER_NAME }}/${{ env.APP_NAME }}:release-${{ env.BRANCH_NAME }}-${{ github.sha }}|' kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          git fetch
+          git checkout ${{ env.BRANCH_NAME }}
+          git pull --rebase origin ${{ env.BRANCH_NAME }}
           
-          git config --global user.name "GitHub Actions"
-          git config --global user.email ${{ secrets.JAEHO_GITHUB_EMAIL }}
-          git add ./kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          sed -i 's|${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:.*|${{ secrets.AWS_ECR_URL }}/${{ env.APP_NAME }}:${{ env.BRANCH_NAME }}-${{ github.sha }}|' kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
+          git config user.email ${{ vars.SAAS_GITHUB_EMAIL }}
+          git config user.name ${{ vars.SAAS_GITHUB_NAME }}
+          git add kube/${{ env.BRANCH_NAME }}/${{ env.APP_NAME }}.yaml
           git commit -m "Update image tag to ${{ github.sha }}"
-          git push origin develop
           git push origin ${{ env.BRANCH_NAME }}
