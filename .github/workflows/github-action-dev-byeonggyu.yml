@@ -63,11 +63,11 @@ jobs:
 
 
 
-  git-remote-push:
-    needs: build
-    runs-on: ubuntu-latest
+#  git-remote-push:
+#    needs: build
+#    runs-on: ubuntu-latest
 
-    steps:
+#    steps:
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
