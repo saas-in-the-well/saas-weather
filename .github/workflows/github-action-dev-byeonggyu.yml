@@ -19,22 +19,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-#      - name: Set up Python 3.9
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.9'
-
-#      - name: Extract branch name
-#        id: vars
-#        shell: bash
-#        run: echo "::set-output name=dt::$(echo `date +%s`)"
          
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-            #role-to-assume: arn:aws:iam::794187215716:role/saas-git-action
-            role-to-assume: arn:aws:iam::794187215716:role/saas_git_cation_test
+            # role-to-assume: arn:aws:iam::794187215716:role/saas_git_cation_test
+            role-to-assume: ${{secrets.AWS_OIDC_ROLE}}
             role-session-name: ecrRoleSession
             aws-region: ap-northeast-2
 
@@ -55,17 +45,11 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-#      - name: Build and Push the Docker image
-#        run: |
-#          docker build . -t ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
-#          docker login -u${{secrets.BYEONGGYU_DOCKER_ID}} -p${{secrets.BYEONGGYU_DOCKER_PW}}
-#          docker push ${{secrets.BYEONGGYU_DOCKER_NAME}}/${{secrets.BYEONGGYU_DOCKER_REPO}}:${{steps.vars.outputs.dt}}
-
       - name: checkout saas-kubernetes
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.SAAS_GITHUB_TOKEN }}
-          repository: 'saas-in-the-well/saas-kubernetes'
+          repository: 'saas-in-the-well/${{var.SAAS_KUBE_REPOSITORY}}'
 
       - name: Update kubernetes manifest
         env:
