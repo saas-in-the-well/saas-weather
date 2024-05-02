@@ -68,11 +68,14 @@ jobs:
           repository: 'saas-in-the-well/saas-kubernetes'
 
       - name: Update kubernetes manifest
+        env:
+            ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+            IMAGE_TAG: ${{ github.sha }}
         run: |
           git fetch
           git checkout dev_byeonggyu
           git pull --rebase origin dev_byeonggyu
-          sed -i 's/image:.*/image: ${{env.ECR_REGISTRY}}\/${{steps.build-image.env.ECR_REGISTRY}}:${{steps.build-image.env.IMAGE_TAG}}/g' ./kube/byeonggyu/${{env.APP_NAME}}.yaml
+          sed -i 's/image:.*/image: $ECR_REGISTRY\/$ECR_REPOSITORY:$IMAGE_TAG/g' ./kube/byeonggyu/${{env.APP_NAME}}.yaml
           git config --global user.name "GitHub Actions"
           git config --global user.email "byeonggyu.jeon@bespinglobal.com"
           git add ./kube/byeonggyu/${{env.APP_NAME}}.yaml
