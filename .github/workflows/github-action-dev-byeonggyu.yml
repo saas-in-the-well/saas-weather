@@ -9,7 +9,7 @@ permissions:
 
 env:
   APP_NAME: saas-weather
-  BRANCH_NAME: develop
+  BRANCH_NAME: dev_byeonggyu
   ECR_REPOSITORY: saas-weather
 
 jobs:
