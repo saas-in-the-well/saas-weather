@@ -23,3 +23,8 @@ async def weather(location: str):
     data_2 = soup.find('div',{'class':'temperature_info'}).text.strip()
     data_3 = soup.find('ul',{'class':'today_chart_list'}).text.strip()
     return location + ' ' + data_1, data_2, data_3
+
+
+@app.get("/health")
+async def health():
+    return "ok"
